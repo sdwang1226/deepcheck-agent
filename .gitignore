@@ -1,0 +1,43 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# Large data (can be rebuilt)
+data/apple_10k.txt
+data/apple_10k_full.txt
+data/apple_10k_clean.txt
+data/apple_10k_2024.pdf
+data/apple_2025_proxy.pdf
+data/sec_response.html
+data/chroma_db*/
+data/faiss_index/
+data/faiss_index_minilm/
+data/faiss_index_bge/
+data/faiss_indices/
+data/10k_filings/
+
+# Scratch notebooks
+Untitled*.ipynb
+Day 4.ipynb
+
+# Personal files (resume, job posting, interview prep)
+docs/*.jpg
+docs/*.pdf
+docs/*.docx
+docs/convert_to_docx.py
+docs/gen_arch_image.py
+docs/architecture.html
+docs/简历_*.md
+docs/演示话术.md
+docs/04_信息披露AI助手_PRD.md
+docs/历次上线需求单/
+
+# Virtual environment
+.venv/
