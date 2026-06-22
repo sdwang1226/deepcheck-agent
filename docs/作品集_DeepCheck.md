@@ -1,6 +1,6 @@
 # DeepCheck 投研 AI Agent — 作品集
 
-> 王少丹 ｜ AI 应用产品经理 ｜ GitHub: [链接待填]
+> 王少丹 ｜ AI 应用产品经理 ｜ GitHub: [deepcheck-agent](https://github.com/sdwang1226/deepcheck-agent)
 
 ---
 
@@ -86,16 +86,6 @@ v6  Embedding升级     → 命中率 50%→70%（根因解决）
 ```
 
 **核心教训：能改数据层的不改Prompt，能改架构的不改数据层。**
-
----
-
-## 与业务的结合
-
-当前工作中已将此技术方案迁移至省级信息披露平台：
-- 输出 AI 智能助手可行性研究报告
-- 设计 RAG + Tool Calling 方案服务 16万+ 用户
-- 预期替代 80% 人工答疑
-
 ---
 
 ## 可现场演示
