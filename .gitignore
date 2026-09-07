@@ -20,7 +20,8 @@ data/chroma_db*/
 data/faiss_index/
 data/faiss_index_minilm/
 data/faiss_index_bge/
-data/faiss_indices/
+data/faiss_indices/*
+!data/faiss_indices/registry.json
 data/10k_filings/
 
 # Scratch notebooks
@@ -36,8 +37,13 @@ docs/gen_arch_image.py
 docs/architecture.html
 docs/简历_*.md
 docs/演示话术.md
+docs/面试准备*.md
 docs/04_信息披露AI助手_PRD.md
 docs/历次上线需求单/
 
 # Virtual environment
 .venv/
+venv/
+
+# Local model cache / scratch
+*.log

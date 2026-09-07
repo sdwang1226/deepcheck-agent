@@ -96,13 +96,24 @@ Agent: → 调用 search_10k_report(query="risk factors", symbol="NVDA.US")
       → 汇总 5 类风险：供应链/出口管制/技术竞争/监管/股价
 ```
 
-### 场景 3：多轮记忆 — 不指定股票自动沿用
+### 场景 3：多轮记忆 + 意图澄清
 ```
+用户: (Round 0) Its main risk factors?     → 无历史、无股票：Agent 反问"请问是哪只股票？"而不是猜
 用户: (Round 1) AAPL current price?        → Agent 查 AAPL
 用户: (Round 2) Its main risk factors?     → Agent 自动沿用 AAPL，搜索年报
 用户: (Round 3) Now check NVDA price       → Agent 切换到 NVDA
 用户: (Round 4) Its revenue breakdown?     → Agent 自动沿用 NVDA，搜索年报
 ```
+
+### 场景 4：执行过程可见（StepTracer）
+```
+$ python demo.py --demo
+  → [步骤 1] 调用 get_stock_quote({'symbol': 'AAPL.US'})
+  ← 完成，耗时 0.4s，[来源: Longbridge Quote API]
+  → [步骤 2] 调用 get_financial_data({'symbol': 'AAPL.US'})
+  ← 完成，耗时 0.6s，[来源: Longbridge Fundamental API | AAPL.US]
+```
+每一步调用了哪个工具、耗时多久、数据来自哪里，用户都能看到——对应 Agent 产品里"计划展示 / 执行反馈 / 结果可追溯"三个环节。
 
 ---
 
@@ -110,30 +121,27 @@ Agent: → 调用 search_10k_report(query="risk factors", symbol="NVDA.US")
 
 ```
 deepcheck-agent/
-├── day4_agent.py              # Agent 完整代码（工具定义 + Prompt + 多轮对话）
-├── day5_eval.py               # 评测体系（4 维度 × 20 条用例）
-├── test_agent.py              # 多股票端到端自动化测试
+├── deepcheck/                 # 核心包（所有脚本共用同一份实现）
+│   ├── config.py              #   环境变量、路径、模型名
+│   ├── data.py                #   Longbridge 上下文 / registry / FAISS 索引加载
+│   ├── embeddings.py          #   BGE 向量化封装
+│   ├── tools.py               #   三个工具：行情 / 财报 / 10-K 检索（返回值层强制来源前缀）
+│   └── agent.py               #   Tool Calling Agent 组装 + StepTracer 执行反馈
+├── demo.py                    # 交互 / 演示 / 多轮记忆脚本
+├── eval.py                    # 评测体系（4 维度 × 20 条用例，结果落盘 eval_results/）
+├── test_agent.py              # 多股票端到端测试（需 API Key）
+├── tests/test_tools_offline.py# 工具层离线单测（不需要 API Key 和索引）
 ├── download_10k.py            # SEC EDGAR 10-K 自动下载 + 建索引
-├── rebuild_vectordb.py        # FAISS 向量库重建脚本
-├── compare_embeddings.py      # MiniLM vs BGE 命中率对比实验
-├── compare_hard.py            # 高难度语义匹配对比实验
-├── apple_research.py          # Longbridge API 探索脚本
-├── demo.py                    # 面向演示的交互脚本
+├── experiments/               # 选型实验脚本（MiniLM vs BGE 对比、API 探索等）
 ├── requirements.txt
 ├── .env.example
 ├── data/
-│   ├── faiss_indices/         # 多股票 FAISS 索引
+│   ├── faiss_indices/         # 多股票 FAISS 索引（.gitignore，registry.json 除外）
 │   │   ├── registry.json      # 索引注册表
-│   │   ├── AAPL_US/           # Apple (302 chunks)
-│   │   ├── MSFT_US/           # Microsoft (737 chunks)
-│   │   ├── GOOGL_US/          # Alphabet (697 chunks)
-│   │   ├── NVDA_US/           # NVIDIA (689 chunks)
-│   │   ├── TSLA_US/           # Tesla (836 chunks)
-│   │   └── AMZN_US/           # Amazon (615 chunks)
-│   ├── faiss_index/           # Apple 单股票索引（兼容旧版）
+│   │   └── {AAPL,MSFT,GOOGL,NVDA,TSLA,AMZN}_US/
 │   └── 10k_filings/           # 10-K 原文（清洗后纯文本）
 └── docs/
-    ├── 01_PRD_Agent.md        # 产品需求文档
+    ├── 01_PRD_Agent.md        # 产品需求文档（含 Agent 交互体验设计）
     ├── 02_架构设计.md          # 系统架构 + 技术决策
     └── 03_Prompt.md           # Prompt v1→v6 迭代记录
 ```
@@ -160,23 +168,26 @@ python download_10k.py
 ### 3. 运行 Agent
 
 ```bash
-python day4_agent.py
-# 多轮对话测试：行情查询 → 年报检索 → 股票切换 → 记忆验证
+python demo.py            # 交互模式
+python demo.py --demo     # 预设场景（行情+财报 / 多股票 RAG / 中文查询）
+python demo.py --memory   # 多轮记忆 + 意图澄清演示
 ```
 
 ### 4. 运行评测
 
 ```bash
-python day5_eval.py
-# 4 维度 × 20 条用例自动评测
+python eval.py            # 4 维度 × 20 条用例，结果写入 eval_results/<时间戳>.json
+python eval.py --limit 8  # 快速冒烟
 ```
 
-### 5. 端到端测试
+### 5. 测试
 
 ```bash
-python test_agent.py
-# 自动验证：AAPL 行情 + NVDA 10-K 风险 + TSLA 10-K 收入
+python -m pytest tests/   # 离线单测：不需要 API Key 和索引即可跑
+python test_agent.py      # 端到端：AAPL 行情 + NVDA 10-K 风险 + TSLA 10-K 收入
 ```
+
+> 可选环境变量见 `.env.example`：代理、`DEEPCHECK_EMBEDDING_LOCAL_ONLY`（离线加载模型）、`SEC_USER_AGENT` 等。
 
 ---
 
@@ -217,6 +228,26 @@ python test_agent.py
 | 数值准确率 | 回答数值与 API 返回值一致 | ~80% |
 | 来源引用率 | 回答中是否标注了来源 | 90%+ |
 | RAG 语义命中率 | 检索结果是否包含答案 | 70% |
+
+**口径说明：**
+- "核心流程稳定性 100%" 指 20 条用例全部完成了 正确工具调用 → 拿到带来源的数据 → 生成回答 的链路，无解析失败、无死循环（v4 Tool Calling 之前是 ~50%）。
+- "数值准确率 ~80%" 是另一个维度：拿到正确数据后，LLM 在综述里改写数字时仍有约 1/5 的样本出现四舍五入、单位换算（B/M）或 YoY 计算偏差。数据本身是对的，问题在"最后一公里"的表达层，下一步打算让工具直接返回格式化好的字符串、LLM 只做引用不做算术。
+- `eval.py` 的数值维度是自动化代理指标（回答里是否出现 `$`/`%`/`B` 等结构化数值），精确到"与 API 返回值逐一比对"仍需人工核对，脚本输出的 JSON 就是为这一步准备的。
+
+---
+
+## 开发过程：AI 编程工具怎么用
+
+本项目由 AI 编程助手（Claude Code / Codex / Windsurf）辅助完成，分工与验证方式如下：
+
+| 环节 | 用法 | 踩过的坑 / 怎么验证 |
+|------|------|---------------------|
+| 脚手架 & 工具函数 | 让 AI 按 LangChain `@tool` 规范生成 3 个工具 | AI 给的 `search_10k_report` 默认 `symbol="AAPL.US"`，用户没指定股票时会静默查苹果。改成必填 + Prompt 要求反问（见场景 3） |
+| 依赖与 API | AI 生成 Longbridge SDK 调用 | 先用 `experiments/apple_research.py` 实际打印 SDK 返回结构，再据此写工具，不信 AI 凭记忆给的字段名；AI 还把本机代理地址和 `local_files_only=True` 写死在脚本里，别人 clone 下来跑不起来，现全部收进 `.env.example` |
+| 评测脚本 | AI 生成 20 条用例和打分函数 | 第一版只跑了前 8 条却报"20 条"，评测集与文档不一致；现 `eval.py` 默认全量并落盘，`tests/` 断言用例数恒为 20 |
+| 重构 | AI 把 4 份重复代码收敛到 `deepcheck/` 包 | 用 `pytest tests/` 离线单测 + `ruff check` 做回归，再跑 `test_agent.py` 端到端 |
+
+经验：AI 产出"能跑"很快，但**默认值、边界条件、文档与代码一致性**是它最容易出错的地方，这三类问题都要靠评测和测试兜底，而不是靠肉眼审。
 
 ---
 

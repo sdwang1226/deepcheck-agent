@@ -1,21 +1,18 @@
 """重建 FAISS 向量库 (Windows 环境) — 使用 BGE-large-zh-v1.5"""
-import os, sys, traceback
-os.environ['HTTP_PROXY'] = 'http://127.0.0.1:7897'
-os.environ['HTTPS_PROXY'] = 'http://127.0.0.1:7897'
+import sys
+import sys as _sys
+import traceback
 
-# Patch transformers torch version check (torch 2.4.1, check requires 2.6+)
-import transformers.utils.import_utils
-transformers.utils.import_utils.check_torch_load_is_safe = lambda: None
-import transformers.modeling_utils
-transformers.modeling_utils.check_torch_load_is_safe = lambda: None
+_sys.path.insert(0, __import__('os').path.dirname(__import__('os').path.dirname(__import__('os').path.abspath(__file__))))
+from deepcheck import config
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+BASE = config.BASE_DIR
 
 try:
+    from langchain.embeddings.base import Embeddings
     from langchain.text_splitter import RecursiveCharacterTextSplitter
     from langchain_community.vectorstores import FAISS
     from sentence_transformers import SentenceTransformer
-    from langchain.embeddings.base import Embeddings
 
     # 1. 加载文本
     print("1. 加载 Apple 10-K...", flush=True)

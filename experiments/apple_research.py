@@ -10,12 +10,19 @@
 
 import os
 import time
+
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from longbridge.openapi import (
-    Config, QuoteContext, FundamentalContext, ContentContext,
-    Period, AdjustType, FinancialReportKind,
+    AdjustType,
+    Config,
+    ContentContext,
+    FinancialReportKind,
+    FundamentalContext,
+    Period,
+    QuoteContext,
 )
 
 # ============================================================
