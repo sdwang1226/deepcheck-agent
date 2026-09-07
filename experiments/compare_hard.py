@@ -1,18 +1,14 @@
 """对比 MiniLM vs BGE-large-zh: 高难度测试（中文查询 + 语义匹配）"""
-import os, sys, time, json
-os.environ['HTTP_PROXY'] = 'http://127.0.0.1:7897'
-os.environ['HTTPS_PROXY'] = 'http://127.0.0.1:7897'
+import sys as _sys
 
-import transformers.utils.import_utils
-transformers.utils.import_utils.check_torch_load_is_safe = lambda: None
-import transformers.modeling_utils
-transformers.modeling_utils.check_torch_load_is_safe = lambda: None
-
+_sys.path.insert(0, __import__('os').path.dirname(__import__('os').path.dirname(__import__('os').path.abspath(__file__))))
+from langchain.embeddings.base import Embeddings
 from langchain_community.vectorstores import FAISS
 from sentence_transformers import SentenceTransformer
-from langchain.embeddings.base import Embeddings
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+from deepcheck import config
+
+BASE = config.BASE_DIR
 
 # 高难度测试：中文查询 + 语义匹配 + 需要理解意图的查询
 hard_tests = [
@@ -95,14 +91,14 @@ r2, d2 = eval_hard("BGE-large-zh (1024d)", vdb2)
 
 # ===== Summary =====
 print(f"\n{'='*60}", flush=True)
-print(f"HARD TEST COMPARISON", flush=True)
+print("HARD TEST COMPARISON", flush=True)
 print(f"{'='*60}", flush=True)
 print(f"  MiniLM:    {r1:.0f}% ({sum(1 for x in d1 if x['hit'])}/{len(d1)})", flush=True)
 print(f"  BGE-large: {r2:.0f}% ({sum(1 for x in d2 if x['hit'])}/{len(d2)})", flush=True)
 print(f"  Delta:     {r2-r1:+.0f}%", flush=True)
 
 # Per-query comparison
-print(f"\n  Per-query breakdown:", flush=True)
+print("\n  Per-query breakdown:", flush=True)
 print(f"  {'Query':<35} {'MiniLM':<10} {'BGE':<10}", flush=True)
 print(f"  {'-'*55}", flush=True)
 for i in range(len(hard_tests)):
@@ -111,4 +107,4 @@ for i in range(len(hard_tests)):
     b_hit = "✅" if d2[i]["hit"] else "❌"
     print(f"  {desc:<35} {m_hit:<10} {b_hit:<10}", flush=True)
 
-print(f"\n✅ 对比完成！", flush=True)
+print("\n✅ 对比完成！", flush=True)

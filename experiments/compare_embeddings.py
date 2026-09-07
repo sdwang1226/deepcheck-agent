@@ -1,20 +1,16 @@
 """对比 MiniLM vs BGE-large-zh embedding 模型的 RAG 命中率"""
-import os, sys, time
-os.environ['HTTP_PROXY'] = 'http://127.0.0.1:7897'
-os.environ['HTTPS_PROXY'] = 'http://127.0.0.1:7897'
+import sys as _sys
+import time
 
-# Patch transformers torch version check (we use torch 2.4.1, check requires 2.6+)
-import transformers.utils.import_utils
-transformers.utils.import_utils.check_torch_load_is_safe = lambda: None
-import transformers.modeling_utils
-transformers.modeling_utils.check_torch_load_is_safe = lambda: None
-
+_sys.path.insert(0, __import__('os').path.dirname(__import__('os').path.dirname(__import__('os').path.abspath(__file__))))
+from langchain.embeddings.base import Embeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from sentence_transformers import SentenceTransformer
-from langchain.embeddings.base import Embeddings
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+from deepcheck import config
+
+BASE = config.BASE_DIR
 
 # ===== 1. 加载文本 + 切分 =====
 print("1. 加载 Apple 10-K + 切分...", flush=True)
@@ -103,7 +99,7 @@ r2, t2, d2 = eval_model(
 
 # ===== 4. 结果汇总 =====
 print(f"\n{'='*60}", flush=True)
-print(f"COMPARISON RESULTS", flush=True)
+print("COMPARISON RESULTS", flush=True)
 print(f"{'='*60}", flush=True)
 print(f"{'Metric':<25} {'MiniLM (v1)':<20} {'BGE-large (v2)':<20}", flush=True)
 print(f"{'-'*65}", flush=True)
@@ -112,4 +108,4 @@ print(f"{'Build time':<25} {t1:<20.1f} {t2:<20.1f}", flush=True)
 print(f"{'Hit rate':<25} {r1:<20.0f}% {r2:<20.0f}%", flush=True)
 improvement = r2 - r1
 print(f"{'Improvement':<25} {'—':<20} {'+' if improvement >= 0 else ''}{improvement:.0f}%", flush=True)
-print(f"\n✅ 对比完成！", flush=True)
+print("\n✅ 对比完成！", flush=True)
